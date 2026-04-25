@@ -1,0 +1,56 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<mpi.h>
+#include<time.h>
+int main(void){
+        int rank,size;
+        int n,i;
+        int s_num;
+        int *array=NULL;
+        int *sub_array;
+        int *counts=NULL;
+        int lcount=0;
+        int tcount=0;
+        MPI_Init(NULL,NULL);
+        MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+        MPI_Comm_size(MPI_COMM_WORLD,&size);
+        if(rank==0){
+                printf("Enter total no.of elements: ");
+                fflush(stdout);
+                scanf("%d",&n);
+                printf("\nEnter number to find freq: ");
+                fflush(stdout);
+                scanf("%d",&s_num);
+        }
+        MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+        MPI_Bcast(&s_num,1,MPI_INT,0,MPI_COMM_WORLD);
+        int eltpp=n/size;
+        sub_array=(int *)malloc(eltpp*sizeof(int));
+        if(rank==0){
+                array=(int *)malloc(n*sizeof(int));
+                srand(time(NULL));
+                printf("Generated array: ");
+                for(i=0;i<n;i++){
+                        array[i]=rand()%10;
+                        printf("%d ",array[i]);
+                }
+                printf("\n");
+        }
+        MPI_Scatter(array,eltpp,MPI_INT,sub_array,eltpp,MPI_INT,0,MPI_COMM_WORLD);
+        for(int i=0;i<eltpp;i++){
+                if(sub_array[i]==s_num){
+                        lcount++;
+                }
+        }
+        MPI_Reduce(&lcount,&tcount,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
+        if(rank==0){
+                printf("\nFrequency of %d is %d\n",s_num,tcount);
+        }
+        free(sub_array);
+        if(rank==0){
+                free(array);
+        }
+        MPI_Finalize();
+        return 0;
+}
+
